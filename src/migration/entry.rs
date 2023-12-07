@@ -1,6 +1,5 @@
 use anyhow::Result;
-use lazy_static::lazy_static;
-use regex::Regex;
+use locator::Locator;
 use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -13,9 +12,7 @@ pub struct VulnComponentBatch {
 pub struct VulnComponentEntry {
     #[serde(deserialize_with = "non_empty_string")]
     pub cve: String,
-
-    #[serde(deserialize_with = "locator")]
-    pub dependency_revision_id: String,
+    pub dependency_revision_id: Locator,
 
     #[serde(serialize_with = "as_json_str")]
     pub function: SymbolTarget,
@@ -92,27 +89,6 @@ where
         ));
     }
     Ok(s)
-}
-
-/// Parses FOSSA locator from non-empty string
-fn locator<'de, D>(deserializer: D) -> Result<String, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    lazy_static! {
-        static ref RE: Regex = Regex::new(r"^[a-z]+(\+[a-zA-Z0-9_:.$-]+)$")
-            .expect("Locator parsing expression must compile");
-    }
-
-    if !s.is_empty() && RE.is_match(&s) {
-        return Ok(s);
-    }
-
-    Err(Error::invalid_value(
-        serde::de::Unexpected::Str(s.as_str()),
-        &"non-empty locator: <ecosystem>+<pkg-name>$<pkg-version>, e.g. pip+numpyt$1.0.0",
-    ))
 }
 
 /// Parses java symbol from non-empty string
