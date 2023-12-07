@@ -1,0 +1,121 @@
+name: release
+
+on:
+  push:
+    tags:
+      - '*-?v[0-9]+*'
+
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      version: ${{ steps.generate.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "builds"
+      - uses: actions-rs/install@v0.1
+        with:
+          crate: parse-changelog
+          version: latest
+      - name: generate
+        id: generate
+        # multi-line strings are special.
+        # see: https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
+        run: |
+          VERSION=$(cargo metadata | jq -r '.packages[] | select(.name == "reachability-toolkit") | .version')
+          TITLE=$(parse-changelog CHANGELOG.md --title)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          parse-changelog CHANGELOG.md $VERSION >> release_changelog.md
+          gh release create ${{ github.ref_name }} --draft --title="$TITLE" --notes-file=release_changelog.md
+          gh release upload ${{ github.ref_name }} LICENSE CHANGELOG.md README.md --clobber
+
+  build:
+    strategy:
+      matrix:
+        os: ['windows-latest', 'ubuntu-latest', 'macos-latest']
+        include:
+          - os: ubuntu-latest
+            os-name: linux
+            toolchain: stable
+          - os: macos-latest
+            os-name: macos
+            toolchain: stable
+          - os: windows-latest
+            os-name: windows
+            toolchain: stable
+
+    needs: [metadata]
+    if: ${{ needs.metadata.result == 'success' }}
+    name: ${{ matrix.os-name }}-build
+    runs-on: ${{ matrix.os }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "builds"
+      - uses: actions-rs/install@v0.1
+        if: ${{ matrix.os-name == 'linux' }}
+        with:
+          crate: cross
+          version: latest
+      - uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-nextest
+          version: latest
+      # Each platform has its own particulars, can't do cool matrix things here.
+      # Just fall back to conditionals.
+      - name: "build and upload for linux"
+        if: ${{ matrix.os-name == 'linux' }}
+        run: |
+          mkdir release
+          cross build --features jemalloc --target=x86_64-unknown-linux-musl --release
+          mv target/x86_64-unknown-linux-musl/release/broker release/broker-$RELEASE_VERSION-x86_64-linux
+          chmod +x release/*
+          gh release upload ${{ github.ref_name }} $(find release -mindepth 1 | xargs) --clobber
+
+      - name: "build and upload for macos"
+        if: ${{ matrix.os-name == 'macos' }}
+        run: |
+          mkdir release
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+          cargo build --target=aarch64-apple-darwin --release
+          cargo build --target=x86_64-apple-darwin --release
+          mv target/aarch64-apple-darwin/release/broker release/broker-$RELEASE_VERSION-aarch64-macos
+          mv target/x86_64-apple-darwin/release/broker release/broker-$RELEASE_VERSION-x86_64-macos
+          chmod +x release/*
+          gh release upload ${{ github.ref_name }} $(find release -mindepth 1 | xargs) --clobber
+
+      - name: "build and upload for windows"
+        if: ${{ matrix.os-name == 'windows' }}
+        run: |
+          mkdir release
+          cargo build --release
+          mv target/release/broker.exe release/broker-$env:RELEASE_VERSION-x86_64-windows.exe
+          gh release upload ${{ github.ref_name }} release/broker-$env:RELEASE_VERSION-x86_64-windows.exe --clobber
+
+  publish-release:
+    needs: [metadata, build]
+    if: ${{ needs.metadata.result == 'success' && needs.build.result == 'success' }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: gh release edit ${{ github.ref_name }} --draft=false
