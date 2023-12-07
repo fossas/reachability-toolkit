@@ -85,7 +85,7 @@ jobs:
         run: |
           mkdir release
           cross build --features jemalloc --target=x86_64-unknown-linux-musl --release
-          mv target/x86_64-unknown-linux-musl/release/broker release/broker-$RELEASE_VERSION-x86_64-linux
+          mv target/x86_64-unknown-linux-musl/release/reachability-toolkit release/reachability-toolkit-$RELEASE_VERSION-x86_64-linux
           chmod +x release/*
           gh release upload ${{ github.ref_name }} $(find release -mindepth 1 | xargs) --clobber
 
@@ -97,8 +97,8 @@ jobs:
           rustup target add x86_64-apple-darwin
           cargo build --target=aarch64-apple-darwin --release
           cargo build --target=x86_64-apple-darwin --release
-          mv target/aarch64-apple-darwin/release/broker release/broker-$RELEASE_VERSION-aarch64-macos
-          mv target/x86_64-apple-darwin/release/broker release/broker-$RELEASE_VERSION-x86_64-macos
+          mv target/aarch64-apple-darwin/release/reachability-toolkit release/reachability-toolkit-$RELEASE_VERSION-aarch64-macos
+          mv target/x86_64-apple-darwin/release/reachability-toolkit release/reachability-toolkit-$RELEASE_VERSION-x86_64-macos
           chmod +x release/*
           gh release upload ${{ github.ref_name }} $(find release -mindepth 1 | xargs) --clobber
 
@@ -107,8 +107,8 @@ jobs:
         run: |
           mkdir release
           cargo build --release
-          mv target/release/broker.exe release/broker-$env:RELEASE_VERSION-x86_64-windows.exe
-          gh release upload ${{ github.ref_name }} release/broker-$env:RELEASE_VERSION-x86_64-windows.exe --clobber
+          mv target/release/reachability-toolkit.exe release/reachability-toolkit-$env:RELEASE_VERSION-x86_64-windows.exe
+          gh release upload ${{ github.ref_name }} release/reachability-toolkit-$env:RELEASE_VERSION-x86_64-windows.exe --clobber
 
   publish-release:
     needs: [metadata, build]
