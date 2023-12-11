@@ -203,7 +203,7 @@ mod tests {
     )]
     fn parse_java_symbols_works(arg: &str, expected: Vec<SymbolJava>) {
         let json_string = format!(r#"{{ "kind": "java", "symbol": "{arg}" }}"#);
-        let symbol: SymbolTarget = serde_json::from_str(&json_string).unwrap();
+        let symbol: SymbolTarget = serde_json::from_str(&json_string).expect("to serialize into json string");
         assert_eq!(
             symbol,
             SymbolTarget::Java {
