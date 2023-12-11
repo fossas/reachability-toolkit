@@ -1,16 +1,12 @@
-use chrono::Utc;
 use clap::{Parser, Subcommand};
-use reachability_toolkit::migration::{
-    example::get_example,
-    util::{entries_from, mk_migration, write_file},
-};
+use reachability_toolkit::migration::{Migrate, VulnComponentBatch};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None, arg_required_else_help = true)]
 struct Cli {
     #[command(subcommand)]
-    command: Option<Commands>,
+    command: Commands,
 }
 
 #[derive(Debug, Subcommand)]
@@ -28,17 +24,7 @@ enum Commands {
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match &cli.command {
-        Some(Commands::Example) => write_file("example.yml", get_example()),
-        Some(Commands::Migrate { file }) => {
-            let entries = entries_from(file)?;
-            write_file(
-                &format!(
-                    "{}-vulnComponent-automated.js",
-                    Utc::now().format("%Y%m%d%H%M%S")
-                ),
-                &mk_migration(entries),
-            )
-        }
-        _ => Ok(()),
+        Commands::Example => VulnComponentBatch::make_example(&PathBuf::from("example.yml")),
+        Commands::Migrate { file } => VulnComponentBatch::make_migration(file),
     }
 }
