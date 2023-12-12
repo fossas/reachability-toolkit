@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use reachability_toolkit::migration::{Migrate, VulnComponentBatch};
+use reachability_toolkit::ingestion::VulnComponentBatch;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
