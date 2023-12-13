@@ -2,6 +2,7 @@ use std::fs::File;
 use std::io::{self, Read, Write};
 use std::path::Path;
 
+use crate::migration;
 use anyhow::{Context, Result};
 use chrono::Utc;
 use clap::{crate_name, crate_version};
@@ -12,8 +13,6 @@ use serde::de::Error;
 use serde::{Deserialize, Serialize};
 use tap::TapFallible;
 
-use crate::migration::MigrationVulnComponentEntry;
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VulnComponentBatch {
     pub entries: Vec<VulnComponentEntry>,
@@ -21,27 +20,27 @@ pub struct VulnComponentBatch {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VulnComponentEntry {
-    pub cve: NonEmptyString,
-    pub dependency_revision_id: Locator,
-    pub function: SymbolTarget,
-    pub researcher: NonEmptyString,
-    pub evidence_notes: Option<String>,
-    pub file_path: Option<String>,
-    pub line_start: Option<u32>,
+    cve: NonEmptyString,
+    dependency_revision_id: Locator,
+    function: SymbolTarget,
+    researcher: NonEmptyString,
+    evidence_notes: Option<String>,
+    file_path: Option<String>,
+    line_start: Option<u32>,
 }
 
-impl TryFrom<VulnComponentEntry> for MigrationVulnComponentEntry {
+impl TryFrom<VulnComponentEntry> for migration::VulnComponentEntry {
     type Error = serde_json::Error;
     fn try_from(v: VulnComponentEntry) -> Result<Self, Self::Error> {
-        Ok(Self {
-            cve: v.cve,
-            dependency_revision_id: v.dependency_revision_id,
-            function: serde_json::to_string(&v.function)?,
-            researcher: v.researcher,
-            evidence_notes: v.evidence_notes,
-            file_path: v.file_path,
-            line_start: v.line_start,
-        })
+        Ok(migration::VulnComponentEntry::builder()
+            .cve(v.cve)
+            .dependency_revision_id(v.dependency_revision_id)
+            .function(serde_json::to_string(&v.function)?)
+            .researcher(v.researcher)
+            .evidence_notes(v.evidence_notes)
+            .file_path(v.file_path)
+            .line_start(v.line_start)
+            .build())
     }
 }
 
@@ -121,7 +120,7 @@ impl VulnComponentBatch {
         let entries = batch
             .entries
             .into_iter()
-            .map(MigrationVulnComponentEntry::try_from)
+            .map(migration::VulnComponentEntry::try_from)
             .collect::<Result<Vec<_>, _>>()
             .context("convert to output format")?;
 

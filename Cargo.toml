@@ -18,6 +18,7 @@ indoc = "2"
 locator = { git = "https://github.com/fossas/locator-rs.git", branch="main"}
 non-empty-string = { version="0.2.4", features= ["serde"] }
 tap = "1.0.1"
+typed-builder = "0.18.0"
 
 [dev-dependencies]
 test-case = "3.3.1"
