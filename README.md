@@ -1,28 +1,22 @@
-# template-rust
+# reachability-toolkit
 
-Template repository for a Rust project.
+This toolkit provides, `reachability-toolkit` command line tool,
+to create migration file from vulnerable batch data.
 
-TODOs for a new project:
-- [ ] Change the license if MPL2 is not appropriate for the project. Make sure to do this before adding any code.
-- [ ] Set [CODEOWNERS] to the team that owns the repository.
-- [ ] Create an API user in [FOSSA] and store it as a secret named `FOSSA_API_KEY`.
-  - Consider naming it with the pattern `ci-{REPO_NAME}`. For example, `ci-template-rust`.
-- [ ] Update repository permissions as appropriate. Generally, the CODEOWNER team is set as admin.
-- [ ] Update branch protection rules as appropriate.
-- [ ] Update repository features and settings. Recommended defaults:
-  - [ ] Turn off all features (Wikis, Issues, Sponsorships, Discussions, Projects); FOSSA uses other systems for these.
-  - [ ] Only allow squash merging.
-  - [ ] Always suggest updating PR branches.
-  - [ ] Allow auto-merge.
-  - [ ] Automatically delete head branches.
+## Usage
 
-Then just edit the included Rust project, or remove it and `cargo init` your project, and get going!
+```bash
+./reachability-toolkit example
+# ./reachability-toolkit example
+# Wrote file at: example.yml
 
-[codeowners]: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
-[fossa]: https://app.fossa.com
+./reachability-toolkit migrate example.yml
+# ./reachability-toolkit migrate <FILE>
+# Wrote file at: 20231207203051-vulnComponent-automated.js
+```
 
-# recommendations
+## Installing
 
-- Prefer [cross compilation](./docs/dev/reference/cross-compile.md) over running workflows in distinct runners when possible.
-- If publishing a Linux binary, consider providing two: one that [statically links libc](./docs/dev/reference/static-binary.md), and one that doesn't.
-- If publishing a macOS binary, consider providing two: one for [Intel and one for M-series CPUs](./docs/dev/reference/macos-arch.md).
+You can install `reachability-toolkit` by downloading release
+from [github release page](https://github.com/fossas/reachability-toolkit/releases).
+
