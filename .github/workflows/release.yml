@@ -84,7 +84,7 @@ jobs:
         if: ${{ matrix.os-name == 'linux' }}
         run: |
           mkdir release
-          cross build --features jemalloc --target=x86_64-unknown-linux-musl --release
+          cross build --target=x86_64-unknown-linux-musl --release
           mv target/x86_64-unknown-linux-musl/release/reachability-toolkit release/reachability-toolkit-$RELEASE_VERSION-x86_64-linux
           chmod +x release/*
           gh release upload ${{ github.ref_name }} $(find release -mindepth 1 | xargs) --clobber

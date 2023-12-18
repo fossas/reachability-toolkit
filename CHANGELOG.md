@@ -1,3 +1,8 @@
+## v0.0.2
+
+Features:
+- Removes `jemalloc` from release process.
+
 ## v0.0.1
 
 Features:
